@@ -23,10 +23,28 @@ namespace MidiXL
         private static extern int midiOutGetNumDevs();
 
         /// <summary>
-        /// See <see cref="GetMidiOutputDeviceCapabilities(int, ref MidiOutputDeviceCapabilities)"/> for information.
+        /// See <see cref="GetMidiOutputDeviceCapabilities"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiOutGetDevCaps(IntPtr deviceID, ref MidiOutputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
+
+        /// <summary>
+        /// See <see cref="OpenMidiOutputDevice"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutOpen(ref MidiDeviceHandle deviceHandle, int deviceID, MidiOutputDelegate callback, IntPtr callbackInstance, MidiOpenFlags flags);
+
+        /// <summary>
+        /// See <see cref="CloseMidiOutputDevice"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutClose(MidiDeviceHandle deviceHandle);
+
+        /// <summary>
+        /// See <see cref="ResetMidiOutputDevice"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref=""/> for information.
@@ -64,6 +82,20 @@ namespace MidiXL
         /// The maximum length of error text returned by the <see cref=""/> and <see cref=""/> functions.
         /// </summary>
         public const int MAX_ERROR_TEXT_LENGTH = 256;
+
+        #endregion
+
+        #region Delegates
+
+        /// <summary>
+        /// Delegate providing the signature for the callback function handling outgoing MIDI messages.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> to the MIDI output device to associate with the callback function.</param>
+        /// <param name="message">A <see cref="MidiOutputMessage"/> received from the <see cref="MidiOutputDevice"/>.</param>
+        /// <param name="instance">Instance data supplied by the <see cref="OpenMidiOutputDevice"/> method.</param>
+        /// <param name="messageParameterA">Dependent on the received <see cref="MidiOutputMessage"/>.</param>
+        /// <param name="messageParameterB">Dependent on the received <see cref="MidiOutputMessage"/>.</param>
+        public delegate void MidiOutputDelegate(MidiDeviceHandle deviceHandle, MidiOutputMessage message, IntPtr instance, IntPtr messageParameterA, IntPtr messageParameterB);
 
         #endregion
 
@@ -135,6 +167,29 @@ namespace MidiXL
             MIDI_SUPPORT_STREAM    = 0x0008  // Provides direct support for the midiStreamOut function
         }
 
+        /// <summary>
+        /// Defines the possible flags to pass to the <see cref="OpenMidiOutputDevice"/> and <see cref="OpenMidiInput"/> methods.
+        /// </summary>
+        private enum MidiOpenFlags : int
+        {
+            CALLBACK_NULL       = 0x00000, // No callback mechanism
+            CALLBACK_IO_STATUS  = 0x00020, // The callback in combination with CALLBACK_FUNCTION enables MIDI_INPUT_MESSAGE_MORE_DATA to be sent to the callback function
+            CALLBACK_WINDOW     = 0x10000, // The callback parameter is a window handle
+            CALLBACK_THREAD     = 0x20000, // The callback parameter is a thread identifier
+            CALLBACK_FUNCTION   = 0x30000, // The callback parameter is a callback function address
+            CALLBACK_EVENT      = 0x50000  // The callback parameter is an event handle, for output only
+        }
+
+         /// <summary>
+        /// Defines the the possible messages sent to the MIDI output device's callback function.
+        /// </summary>
+        public enum MidiOutputMessage : int
+        {
+            MIDI_OUTPUT_MESSAGE_OPEN    = 0x3C7, // MIDI Output device is opened
+            MIDI_OUTPUT_MESSAGE_CLOSE   = 0x3C8, // MIDI Output device is closed
+            MIDI_OUTPUT_MESSAGE_DONE    = 0x3C9  // System exclusive or stream buffer has been played an returned to the application
+        }
+
         #endregion
 
         #region Structures
@@ -193,7 +248,7 @@ namespace MidiXL
         /// Counts the number of available MIDI output devices in the system.
         /// </summary>
         /// <returns>An <see cref="int"/> representing the number of available MIDI output devices in the system.</returns>
-        public static int MidiOutputDeviceCount()
+        internal static int MidiOutputDeviceCount()
         {
             return midiOutGetNumDevs();
         }
@@ -202,7 +257,7 @@ namespace MidiXL
         /// Counts the number of available MIDI input devices in the system.
         /// </summary>
         /// <returns>An <see cref="int"/> representing the number of available MIDI input devices in the system.</returns>
-        public static int MidiInputDeviceCount()
+        internal static int MidiInputDeviceCount()
         {
             return midiInGetNumDevs();
         }
@@ -213,7 +268,7 @@ namespace MidiXL
         /// <param name="deviceID">An <see cref="int"/> representing the MIDI output device's ID.</param>
         /// <param name="deviceCapabilities">A reference to the <see cref="MidiOutputDeviceCapabilities"/> structure to store the MIDI output device's capabilities.</param>
         /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
-        public static Result GetMidiOutputDeviceCapabilities(int deviceID, ref MidiOutputDeviceCapabilities deviceCapabilities)
+        internal static Result GetMidiOutputDeviceCapabilities(int deviceID, ref MidiOutputDeviceCapabilities deviceCapabilities)
         {
             return midiOutGetDevCaps((IntPtr)deviceID, ref deviceCapabilities, Marshal.SizeOf(typeof(MidiOutputDeviceCapabilities)));
         }
@@ -224,9 +279,42 @@ namespace MidiXL
         /// <param name="deviceID">An <see cref="int"/> representing the MIDI input device's ID.</param>
         /// <param name="deviceCapabilities">A reference to the <see cref="MidiInputDeviceCapabilities"/> structure to store the MIDI input device's capabilities.</param>
         /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
-        public static Result GetMidiInputDeviceCapabilities(int deviceID, ref MidiInputDeviceCapabilities deviceCapabilities)
+        internal static Result GetMidiInputDeviceCapabilities(int deviceID, ref MidiInputDeviceCapabilities deviceCapabilities)
         {
             return midiInGetDevCaps((IntPtr)deviceID, ref deviceCapabilities, Marshal.SizeOf(typeof(MidiInputDeviceCapabilities)));
+        }
+
+        /// <summary>
+        /// Opens the specified MIDI output device for sending MIDI data.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> to store the obtained device handle.</param>
+        /// <param name="deviceID">An <see cref="int"/> representing the MIDI output device's ID.</param>
+        /// <param name="callback">A <see cref="MidiOutputDelegate"/> specifying the callback function to process MIDI messages.</param>
+        /// <param name="callbackInstance">An <see cref="IntPtr"/> specifying user instance data passed to the callback function.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result OpenMidiOutputDevice(ref MidiDeviceHandle deviceHandle, int deviceID, MidiOutputDelegate callback, IntPtr callbackInstance)
+        {
+            return midiOutOpen(ref deviceHandle, deviceID, callback, callbackInstance, callback == null ? MidiOpenFlags.CALLBACK_NULL : MidiOpenFlags.CALLBACK_FUNCTION);
+        }
+
+        /// <summary>
+        /// Closes the specified MIDI output device.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to close.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result CloseMidiOutputDevice(MidiDeviceHandle deviceHandle)
+        {
+            return midiOutClose(deviceHandle);
+        }
+
+        /// <summary>
+        /// Resets the specified MIDI output device, turning off all notes on all MIDI channels.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to reset.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result ResetMidiOutputDevice(MidiDeviceHandle deviceHandle)
+        {
+            return midiOutReset(deviceHandle);
         }
 
         /// <summary>

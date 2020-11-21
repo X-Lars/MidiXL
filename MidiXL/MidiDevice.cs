@@ -12,7 +12,7 @@ namespace MidiXL
         /// <summary>
         /// A handle to reference the <see cref="MidiDevice"/> in API calls.
         /// </summary>
-        private API.MidiDeviceHandle _Handle;
+        internal protected API.MidiDeviceHandle _Handle;
 
         #endregion
 
@@ -88,7 +88,7 @@ namespace MidiXL
         /// <param name="errorCode">An <see cref="API.Result"/> value specifying the error code.</param>
         public MidiDeviceException(API.Result errorCode)
         {
-            this.ErrorCode = errorCode;
+            this.ErrorCode = (int)errorCode;
         }
 
         #endregion
@@ -98,7 +98,7 @@ namespace MidiXL
         /// <summary>
         /// Gets the error code associated with the device exception.
         /// </summary>
-        public API.Result ErrorCode { get; }
+        public int ErrorCode { get; }
 
         #endregion
     }

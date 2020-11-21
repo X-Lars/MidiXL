@@ -133,7 +133,7 @@ namespace MidiXL
         /// </summary>
         public override string Message
         {
-            get { return $"MIDI Input Device Error #{ErrorCode}: {_Buffer}"; }
+            get { return $"MIDI Input Device Error #{ErrorCode}\n{_Buffer}"; }
         }
 
         #endregion

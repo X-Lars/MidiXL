@@ -25,6 +25,11 @@ namespace MidiXL
         private static MidiOutputDevice[] _DeviceList = null;
 
         /// <summary>
+        /// Reference to the callback function used by the <see cref="API.OpenMidiOutputDevice"/> method.
+        /// </summary>
+        private API.MidiOutputDelegate _Callback;
+
+        /// <summary>
         /// Lock for thread safety.
         /// </summary>
         private static readonly object _Lock = new object();
@@ -50,7 +55,7 @@ namespace MidiXL
         /// <summary>
         /// Gets a list installed MIDI output devices installed in the system.
         /// </summary>
-        public static IReadOnlyCollection<MidiOutputDevice> DevicesList
+        public static ReadOnlyCollection<MidiOutputDevice> DevicesList
         {
             get 
             { 
@@ -63,6 +68,11 @@ namespace MidiXL
             }
         }
 
+        /// <summary>
+        /// Gets whether the MIDI output device is openend or closed.
+        /// </summary>
+        public bool IsOpen { get; private set; }
+
         #endregion
 
         #region Methods
@@ -70,6 +80,10 @@ namespace MidiXL
         /// <summary>
         /// Initializes the internal list of installed MIDI output devices.
         /// </summary>
+        /// <exception cref="MidiOutputDeviceException">Raises error #2: MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID, the specified device ID is out of range.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #6: MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER, the driver is not installed.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
         private static void Initialize()
         {
             _DeviceList = new MidiOutputDevice[API.MidiOutputDeviceCount()];
@@ -82,6 +96,39 @@ namespace MidiXL
 
                 _DeviceList[deviceID] = new MidiOutputDevice(deviceID, capabilities);
             }
+        }
+
+        /// <summary>
+        /// Opens the MIDI output device for sending MIDI messages.
+        /// </summary>
+        /// <exception cref="MidiOutputDeviceException">Raises error #2: MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID, the specified device ID is out of range.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #4: MULTIMEDIA_SYSTEM_ERROR_ALLOCATED when the device is alread opened.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #68: MIDI_ERROR_NO_DEVICE, no MIDI port was found, only occurs when the mapper is opened.</exception>
+        public void Open()
+        {
+            InvalidateResult(API.OpenMidiOutputDevice(ref _Handle, this.ID, _Callback, IntPtr.Zero));
+        }
+
+        /// <summary>
+        /// Closes the MIDI output device.
+        /// </summary>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, tThe specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, buffers are still in the queue.</exception>
+        public void Close()
+        {
+            InvalidateResult(API.CloseMidiOutputDevice(_Handle));
+        }
+
+        /// <summary>
+        /// Turns off all notes on all MIDI channels.
+        /// </summary>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, tThe specified device handle is invalid.</exception>
+        public void Reset()
+        {
+            InvalidateResult(API.ResetMidiOutputDevice(_Handle));
         }
 
         /// <summary>
@@ -133,7 +180,7 @@ namespace MidiXL
         /// </summary>
         public override string Message
         {
-            get { return $"MIDI Output Device Error #{ErrorCode}: {_Buffer}"; }
+            get { return $"MIDI Output Device Error #{ErrorCode}\n{_Buffer}"; }
         }
 
         #endregion
