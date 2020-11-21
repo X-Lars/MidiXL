@@ -35,7 +35,7 @@ namespace MidiXL
         private static extern int midiInGetNumDevs();
 
         /// <summary>
-        /// See <see cref=""/>
+        /// See <see cref="GetMidiInputDeviceCapabilities(int, ref MidiInputDeviceCapabilities)"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInGetDevCaps(IntPtr deviceID, ref MidiInputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
@@ -46,7 +46,7 @@ namespace MidiXL
         #region Constants
 
         /// <summary>
-        /// The maximum lenght of a device name field of the <see cref="MidiInputDeviceCapabilities"/> and <see cref="MidiOutputDeviceCapabilities"/> structures.
+        /// The maximum lenght of a device name field in the <see cref="MidiInputDeviceCapabilities"/> and <see cref="MidiOutputDeviceCapabilities"/> structures.
         /// </summary>
         public const int MAX_DEVICE_NAME_LENGTH = 32;
 
@@ -96,7 +96,7 @@ namespace MidiXL
         }
 
         /// <summary>
-        /// Defines the possible result for the <see cref="MidiOutputDeviceCapabilities.DeviceType"/> field.
+        /// Defines the possible results for the <see cref="MidiOutputDeviceCapabilities.DeviceType"/> field.
         /// </summary>
         public enum MidiDeviceType : short
         {
@@ -123,6 +123,15 @@ namespace MidiXL
         #endregion
 
         #region Structures
+
+        /// <summary>
+        /// Defines a handle to a MIDI device.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MidiDeviceHandle
+        {
+            public IntPtr Handle;
+        }
 
         /// <summary>
         /// Defines the structure to store MIDI output device capabilities.
