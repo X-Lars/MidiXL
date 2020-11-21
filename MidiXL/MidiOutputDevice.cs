@@ -126,14 +126,14 @@ namespace MidiXL
         /// <summary>
         /// Turns off all notes on all MIDI channels.
         /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, tThe specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
         public void Reset()
         {
             InvalidateResult(API.ResetMidiOutputDevice(_Handle));
         }
 
         /// <summary>
-        /// Callback function for the <see cref="MidiOutputDevice"/> filled by the system.
+        /// Callback function to be called by the system.
         /// </summary>
         /// <param name="handle">An <see cref="API.MidiDeviceHandle"/> to the MIDI output device to associate with the callback function.</param>
         /// <param name="message">An <see cref="API.MidiOutputMessage"/> containing the message.</param>
