@@ -7,7 +7,7 @@ namespace MidiXL
     /// </summary>
     public abstract class MidiDevice
     {
-        #region Variables
+        #region Fields
 
         /// <summary>
         /// A handle to reference the <see cref="MidiDevice"/> in API calls.

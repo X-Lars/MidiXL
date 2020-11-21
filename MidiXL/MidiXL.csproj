@@ -43,6 +43,8 @@
   <ItemGroup>
     <Compile Include="API.cs" />
     <Compile Include="MidiDevice.cs" />
+    <Compile Include="MidiInputDevice.cs" />
+    <Compile Include="MidiOutputDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

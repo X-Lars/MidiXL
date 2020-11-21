@@ -29,6 +29,12 @@ namespace MidiXL
         private static extern Result midiOutGetDevCaps(IntPtr deviceID, ref MidiOutputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
 
         /// <summary>
+        /// See <see cref=""/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
+
+        /// <summary>
         /// See <see cref="MidiInputDeviceCount"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
@@ -40,7 +46,11 @@ namespace MidiXL
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInGetDevCaps(IntPtr deviceID, ref MidiInputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
 
-
+        /// <summary>
+        /// See <see cref=""/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
         #endregion
 
         #region Constants
@@ -49,6 +59,11 @@ namespace MidiXL
         /// The maximum lenght of a device name field in the <see cref="MidiInputDeviceCapabilities"/> and <see cref="MidiOutputDeviceCapabilities"/> structures.
         /// </summary>
         public const int MAX_DEVICE_NAME_LENGTH = 32;
+
+        /// <summary>
+        /// The maximum length of error text returned by the <see cref=""/> and <see cref=""/> functions.
+        /// </summary>
+        public const int MAX_ERROR_TEXT_LENGTH = 256;
 
         #endregion
 
@@ -214,6 +229,27 @@ namespace MidiXL
             return midiInGetDevCaps((IntPtr)deviceID, ref deviceCapabilities, Marshal.SizeOf(typeof(MidiInputDeviceCapabilities)));
         }
 
+        /// <summary>
+        /// Method to retreive a textual description for a MIDI output device error identified by the specified <see cref="Result"/> error code.
+        /// </summary>
+        /// <param name="errorCode">A <see cref="Result"/> value specifying the error code.</param>
+        /// <param name="buffer">A <see cref="StringBuilder"/> object to function as buffer to be filled with the textual description.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result GetMidiOutputDeviceErrorText(Result errorCode, StringBuilder buffer)
+        {
+            return midiOutGetErrorText(errorCode, buffer, buffer.Capacity);
+        }
+
+        /// <summary>
+        /// Method to retreive a textual description for a MIDI input device error identified by the specified <see cref="Result"/> error code.
+        /// </summary>
+        /// <param name="errorCode">A <see cref="Result"/> value specifying the error code.</param>
+        /// <param name="buffer">A <see cref="StringBuilder"/> object to function as buffer to be filled with the textual description.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result GetMidiInputDeviceErrorText(Result errorCode, StringBuilder buffer)
+        {
+            return midiInGetErrorText(errorCode, buffer, buffer.Capacity);
+        }
         #endregion
     }
 }
