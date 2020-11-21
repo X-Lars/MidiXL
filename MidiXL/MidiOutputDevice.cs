@@ -46,6 +46,7 @@ namespace MidiXL
         private MidiOutputDevice(int deviceID, API.MidiOutputDeviceCapabilities capabilities) : base(deviceID, capabilities)
         {
             _Capabilities = capabilities;
+            _Callback = Callback;
         }
 
         #endregion
@@ -129,6 +130,27 @@ namespace MidiXL
         public void Reset()
         {
             InvalidateResult(API.ResetMidiOutputDevice(_Handle));
+        }
+
+        /// <summary>
+        /// Callback function for the <see cref="MidiOutputDevice"/> filled by the system.
+        /// </summary>
+        /// <param name="handle">An <see cref="API.MidiDeviceHandle"/> to the MIDI output device to associate with the callback function.</param>
+        /// <param name="message">An <see cref="API.MidiOutputMessage"/> containing the message.</param>
+        /// <param name="instance">An <see cref="IntPtr"/> to the instance data supplied by the <see cref="API.OpenMidiOutputDevice"/> function.</param>
+        /// <param name="messageParameterA">An <see cref="IntPtr"/> to the first message parameter.</param>
+        /// <param name="messageParameterB">An <see cref="IntPtr"/> to the second message parameter.</param>
+        private void Callback(API.MidiDeviceHandle handle, API.MidiOutputMessage message, IntPtr instance, IntPtr messageParameterA, IntPtr messageParameterB)
+        {
+            if (message == API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_OPEN)
+            {
+                this.IsOpen = true;
+            }
+            else if (message == API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_CLOSE)
+            {
+                this.IsOpen = false;
+            }
+            else if (message == API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_DONE) { }
         }
 
         /// <summary>
