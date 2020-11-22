@@ -115,7 +115,7 @@ namespace MidiXL
         /// <summary>
         /// Closes the MIDI output device.
         /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, tThe specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
         /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
         /// <exception cref="MidiOutputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, buffers are still in the queue.</exception>
         public void Close()
@@ -130,6 +130,29 @@ namespace MidiXL
         public void Reset()
         {
             InvalidateResult(API.ResetMidiOutputDevice(_Handle));
+        }
+
+        /// <summary>
+        /// Connects the MIDI output device to a MIDI input or thru device.
+        /// Received <see cref="API.MidiInputMessage"/>s are sent through to the connected MIDI output or thru device.
+        /// </summary>
+        /// <param name="device">A <see cref="MidiInputDevice"/> or MIDI thru device to connect to.</param>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises error #67: MIDI_ERROR_NOT_READY, the specified input device is already connected to an output device.</exception>
+        /// <remarks>For MIDI thru devices, a handle must be obtained by a calling the <see cref="API.OpenMidiOutputDevice"/> method.</remarks>
+        public void Connect(MidiInputDevice device)
+        {
+            InvalidateResult(API.ConnectMidiDevices(device._Handle, _Handle));
+        }
+
+        /// <summary>
+        /// Disconnects the MIDI output device from a MIDI input or thru device.
+        /// </summary>
+        /// <param name="device">A <see cref="MidiInputDevice"/> or MIDI thru device to disconnect from.</param>
+        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        public void Disconnect(MidiInputDevice device)
+        {
+            InvalidateResult(API.DisconnectMidiDevices(device._Handle, _Handle));
         }
 
         /// <summary>

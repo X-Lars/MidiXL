@@ -47,7 +47,7 @@ namespace MidiXL
         private static extern Result midiOutReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
-        /// See <see cref=""/> for information.
+        /// See <see cref="GetMidiOutputDeviceErrorText"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiOutGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
@@ -65,28 +65,53 @@ namespace MidiXL
         private static extern Result midiInGetDevCaps(IntPtr deviceID, ref MidiInputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
 
         /// <summary>
-        /// See <see cref=""/> for information.
+        /// See <see cref="OpenMidiInputDevice"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInOpen(ref MidiDeviceHandle deviceHandle, int deviceID, MidiInputDelegate callback, IntPtr callbackInstance, MidiOpenFlags flags);
 
         /// <summary>
-        /// See <see cref=""/> for information.
+        /// See <see cref="CloseMidiInputDevice"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInClose(MidiDeviceHandle deviceHandle);
 
         /// <summary>
-        /// See <see cref=""/> for information.
+        /// See <see cref="ResetMidiInputDevice"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
-        /// See <see cref=""/> for information.
+        /// See <see cref="StartMidiInputDevice"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInStart(MidiDeviceHandle deviceHandle);
+
+        /// <summary>
+        /// See <see cref="StopMidiInputDevice"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInStop(MidiDeviceHandle deviceHandle);
+
+        /// <summary>
+        /// See <see cref="GetMidiInputDeviceErrorText"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
+
+        /// <summary>
+        /// See <see cref="ConnectMidiDevices"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll")]
+        private static extern Result midiConnect(MidiDeviceHandle handleA, MidiDeviceHandle handleB, IntPtr reserved);
+
+        /// <summary>
+        /// See <see cref="DisconnectMidiDevices"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll")]
+        private static extern Result midiDisconnect(MidiDeviceHandle handleA, MidiDeviceHandle handleB, IntPtr reserved);
+
         #endregion
 
         #region Constants
@@ -196,7 +221,7 @@ namespace MidiXL
         }
 
         /// <summary>
-        /// Defines the possible flags to pass to the <see cref="OpenMidiOutputDevice"/> and <see cref="OpenMidiInput"/> methods.
+        /// Defines the possible flags to pass to the <see cref="OpenMidiOutputDevice"/> and <see cref="OpenMidiInputDevice"/> methods.
         /// </summary>
         private enum MidiOpenFlags : int
         {
@@ -232,6 +257,17 @@ namespace MidiXL
             MIDI_INPUT_MESSAGE_MORE_DATA    = 0x3CC  // Application is not processing data fast enough
         }
 
+        /// <summary>
+        /// Defines the possible flags for the <see cref="MidiHeader.Flags"/> field.
+        /// </summary>
+        public enum MidiHeaderFlags : int
+        {
+            MIDI_HEADER_DONE        = 1, // Set by device driver to indicate it is finished with the buffer and is returning to the application
+            MIDI_HEADER_PREPARED    = 2, // Set by Windows to indicate that the buffer has been prepared
+            MIDI_HEADER_ENQUEUED    = 4, // Set by Windows to indicate that the buffer is queued for playback
+            MIDI_HEADER_STREAM      = 8  // Set to indicate that the buffer is a stream buffer
+        }
+
         #endregion
 
         #region Structures
@@ -243,6 +279,25 @@ namespace MidiXL
         public struct MidiDeviceHandle
         {
             public IntPtr Handle;
+        }
+
+        /// <summary>
+        /// Defines a structure to store an outgoing system exclusive message or stream buffer.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct MidiHeader
+        {
+            public IntPtr Data;           // Pointer to MIDI data
+            public int BufferSize;        // Size of the buffer
+            public int BytesRecorded;     // Actual amount of data in the buffer
+            public IntPtr UserData;       // Custom user data
+            public MidiHeaderFlags Flags; // Flags providing information about the buffer
+            public IntPtr Next;           // Reserved
+            public IntPtr Reserved;       // Reserved
+            public int Offset;            // Offset into the buffer when a callback is performed, enables to determine which event caused the callback
+
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public int[] ReservedArray;   // Reserved
         }
 
         /// <summary>
@@ -280,7 +335,6 @@ namespace MidiXL
         }
 
         #endregion
-
 
         #endregion
 
@@ -413,6 +467,50 @@ namespace MidiXL
         {
             return midiInGetErrorText(errorCode, buffer, buffer.Capacity);
         }
+
+        /// <summary>
+        /// Method to start receiving MIDI data on a MIDI input device.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input device to start receiving.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result StartMidiInputDevice(MidiDeviceHandle deviceHandle)
+        {
+            return midiInStart(deviceHandle);
+        }
+
+        /// <summary>
+        /// Method to stop receiving MIDI data on a MIDI input device.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input device to stop receiving.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result StopMidiInputDevice(MidiDeviceHandle deviceHandle)
+        {
+            return midiInStop(deviceHandle);
+        }
+
+        /// <summary>
+        /// Connects a MIDI input device to a MIDI thru or output device or connects a MIDI thru device to a MIDI output device.
+        /// </summary>
+        /// <param name="inputMidiDeviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input or thru device to connect.</param>
+        /// <param name="outputMidiDeviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output or thru device to connect.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        /// <remarks>For MIDI thru devices, a handle must be obtained by a calling the <see cref="OpenMidiOutputDevice"/> method.</remarks>
+        public static Result ConnectMidiDevices(MidiDeviceHandle inputMidiDeviceHandle, MidiDeviceHandle outputMidiDeviceHandle)
+        {
+            return midiConnect(inputMidiDeviceHandle, outputMidiDeviceHandle, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Disconnects a MIDI input device from a MIDI thru or output device or disconnects a MIDI thru device from a MIDI output device.
+        /// </summary>
+        /// <param name="inputMidiDeviceHandle">An <see cref="MidiDeviceHandle"/> referencing the MIDI input or thru device to disconnect.</param>
+        /// <param name="outputMidiDeviceHandle">An <see cref="MidiDeviceHandle"/> referencing the MIDI output or thru device to disconnect.</param>
+        /// <returns>A <see cref="MultiMediaResult"/> value containing the result of the API call.</returns>
+        public static Result DisconnectMidiDevices(MidiDeviceHandle inputMidiDeviceHandle, MidiDeviceHandle outputMidiDeviceHandle)
+        {
+            return midiDisconnect(inputMidiDeviceHandle, outputMidiDeviceHandle, IntPtr.Zero);
+        }
+
         #endregion
     }
 }
