@@ -43,7 +43,9 @@
   <ItemGroup>
     <Compile Include="API.cs" />
     <Compile Include="MidiDevice.cs" />
+    <Compile Include="MidiEnumerations.cs" />
     <Compile Include="MidiInputDevice.cs" />
+    <Compile Include="MidiMessages.cs" />
     <Compile Include="MidiOutputDevice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

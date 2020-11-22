@@ -44,7 +44,7 @@ namespace MidiXL
         #region Constructor
 
         /// <summary>
-        /// Private contstructor to create and initialize a new <see cref="MidiInputDevice"/>, only invoked by the <see cref="Initialize"/> method.
+        /// Private contstructor to create and initialize a new <see cref="MidiInputDevice"/>, only invoked by the <see cref="InitializeDeviceList"/> method.
         /// </summary>
         /// <param name="deviceID">An <see cref="int"/> representing the unique indexed <see cref="MidiInputDevice"/>'s ID.</param>
         /// <param name="capabilities">An <see cref="API.MidiInputDeviceCapabilities"/> structure to store the <see cref="MidiInputDevice"/>'s capabilities.</param>
@@ -61,13 +61,13 @@ namespace MidiXL
         /// <summary>
         /// Gets a list installed MIDI input devices installed in the system.
         /// </summary>
-        public static ReadOnlyCollection<MidiInputDevice> DevicesList
+        public static ReadOnlyCollection<MidiInputDevice> DeviceList
         {
             get
             {
                 lock (_Lock)
                 {
-                    Initialize();
+                    InitializeDeviceList();
 
                     return new ReadOnlyCollection<MidiInputDevice>(_DeviceList);
                 }
@@ -90,7 +90,7 @@ namespace MidiXL
         /// <exception cref="MidiInputDeviceException">Raises error #6: MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER, the driver is not installed.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        private static void Initialize()
+        private static void InitializeDeviceList()
         {
             _DeviceList = new MidiInputDevice[API.MidiInputDeviceCount()];
 
@@ -190,16 +190,35 @@ namespace MidiXL
         /// <param name="messageParameterB">An <see cref="IntPtr"/> to the second message parameter.</param>
         private void Callback(API.MidiDeviceHandle handle, API.MidiInputMessage message, IntPtr instance, IntPtr messageParameterA, IntPtr messageParameterB)
         {
-            if (message == API.MidiInputMessage.MIDI_INPUT_MESSAGE_OPEN)
+            switch(message)
             {
-                this.IsOpen = true;
-            }
-            else if (message == API.MidiInputMessage.MIDI_INPUT_MESSAGE_CLOSE)
-            {
-                this.IsOpen = false;
-            }
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_DATA:
+                    ProcessShortMessage(new ShortMessage(messageParameterA, messageParameterB));
+                    break;
 
-            // TODO: MIDI Messages, changes order of if statements for performance or use switch statement?
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_LONG_DATA:
+                    break;
+
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_OPEN:
+                    this.IsOpen = true;
+                    break;
+
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_CLOSE:
+                    this.IsOpen = false;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Processes the provided <see cref="ShortMessage"/> and raises associated events.
+        /// </summary>
+        /// <param name="message">A <see cref="ShortMessage"/> to process and raise events for.</param>
+        private void ProcessShortMessage(ShortMessage message)
+        {
+
         }
 
         /// <summary>

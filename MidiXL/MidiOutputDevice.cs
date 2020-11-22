@@ -39,7 +39,7 @@ namespace MidiXL
         #region Constructor
 
         /// <summary>
-        /// Private contstructor to create and initialize a new <see cref="MidiOutputDevice"/>, only invoked by the <see cref="Initialize"/> method.
+        /// Private contstructor to create and initialize a new <see cref="MidiOutputDevice"/>, only invoked by the <see cref="InitializeDeviceList"/> method.
         /// </summary>
         /// <param name="deviceID">An <see cref="int"/> representing the unique indexed <see cref="MidiOutputDevice"/>'s ID.</param>
         /// <param name="capabilities">An <see cref="API.MidiOutputDeviceCapabilities"/> structure to store the <see cref="MidiOutputDevice"/>'s capabilities.</param>
@@ -56,13 +56,13 @@ namespace MidiXL
         /// <summary>
         /// Gets a list installed MIDI output devices installed in the system.
         /// </summary>
-        public static ReadOnlyCollection<MidiOutputDevice> DevicesList
+        public static ReadOnlyCollection<MidiOutputDevice> DeviceList
         {
             get 
             { 
                 lock(_Lock)
                 {
-                    Initialize();
+                    InitializeDeviceList();
 
                     return new ReadOnlyCollection<MidiOutputDevice>(_DeviceList);
                 }
@@ -85,7 +85,7 @@ namespace MidiXL
         /// <exception cref="MidiOutputDeviceException">Raises error #6: MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER, the driver is not installed.</exception>
         /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
         /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        private static void Initialize()
+        private static void InitializeDeviceList()
         {
             _DeviceList = new MidiOutputDevice[API.MidiOutputDeviceCount()];
 
