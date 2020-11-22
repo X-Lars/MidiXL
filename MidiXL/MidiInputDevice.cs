@@ -218,7 +218,18 @@ namespace MidiXL
         /// <param name="message">A <see cref="ShortMessage"/> to process and raise events for.</param>
         private void ProcessShortMessage(ShortMessage message)
         {
+            if((message.Status & 0xF0) >= (int)ChannelMessageTypes.Min && (message.Status & 0xF0) <= (int)ChannelMessageTypes.Max)
+            {
+                // Channel message
+                switch((ChannelMessageTypes)message.Status)
+                {
+                    case ChannelMessageTypes.NoteOn:
+                        break;
 
+                    default:
+                        break;
+                }
+            }
         }
 
         /// <summary>
