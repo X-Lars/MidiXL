@@ -119,7 +119,7 @@ namespace MidiXL
     }
 
     /// <summary>
-    /// Class providing MIDI event arguments specific to <see cref="PitchBendMessage"/>
+    /// Class providing MIDI event arguments specific to <see cref="PitchBendMessage"/>s.
     /// </summary>
     public class PitchBendMessageEventArgs
     {
@@ -147,7 +147,7 @@ namespace MidiXL
     }
 
     /// <summary>
-    /// Class providing MIDI event arguments specific to <see cref="KeyAfterTouchMessage"/>
+    /// Class providing MIDI event arguments specific to <see cref="KeyAfterTouchMessage"/>s.
     /// </summary>
     public class KeyAfterTouchMessageEventArgs
     {
@@ -175,7 +175,7 @@ namespace MidiXL
     }
 
     /// <summary>
-    /// Class providing MIDI event arguments specific to <see cref="ChannelAfterTouchMessage"/>
+    /// Class providing MIDI event arguments specific to <see cref="ChannelAfterTouchMessage"/>s.
     /// </summary>
     public class ChannelAfterTouchMessageEventArgs
     {
@@ -198,6 +198,90 @@ namespace MidiXL
         /// Gets the message that raised the event.
         /// </summary>
         public ChannelAfterTouchMessage Message { get; }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Class providing MIDI event arguments specific to <see cref="SystemExclusiveMessage"/>s.
+    /// </summary>
+    public class SystemExclusiveMessageEventArgs
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="SystemExclusiveMessageEventArgs"/> with the specified message.
+        /// </summary>
+        /// <param name="message"></param>
+        public SystemExclusiveMessageEventArgs(SystemExclusiveMessage message)
+        {
+            this.Message = message;
+        }
+
+        #endregion
+
+        #region Properties
+        
+        /// <summary>
+        /// Gets the message that raised the event.
+        /// </summary>
+        public SystemExclusiveMessage Message { get; }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Class providing MIDI event arguments specific to <see cref="UniversalRealTimeMessage"/>s.
+    /// </summary>
+    public class UniversalRealTimeMessageEventArgs
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="UniversalRealTimeMessageEventArgs"/> with the specified message.
+        /// </summary>
+        /// <param name="message"></param>
+        public UniversalRealTimeMessageEventArgs(UniversalRealTimeMessage message)
+        {
+            this.Message = message;
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the message that raised the event.
+        /// </summary>
+        public UniversalRealTimeMessage Message { get; }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Class providing MIDI event arguments specific to <see cref="UniversalNonRealTimeMessage"/>s.
+    /// </summary>
+    public class UniversalNonRealTimeMessageEventArgs
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="UniversalNonRealTimeMessageEventArgs"/> with the specified message.
+        /// </summary>
+        /// <param name="message"></param>
+        public UniversalNonRealTimeMessageEventArgs(UniversalNonRealTimeMessage message)
+        {
+            this.Message = message;
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the message that raised the event.
+        /// </summary>
+        public UniversalNonRealTimeMessage Message { get; }
 
         #endregion
     }

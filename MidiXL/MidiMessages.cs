@@ -93,6 +93,14 @@ namespace MidiXL
         /// </summary>
         internal int TimeStamp { get; private set; }
 
+        /// <summary>
+        /// Gets the raw short message data.
+        /// </summary>
+        public virtual int Message
+        {
+            get { return (this.Status | (this.DataA << 8) | (this.DataB << 16)); }
+        }
+
         #endregion
     }
 
@@ -139,6 +147,9 @@ namespace MidiXL
                 this.Data[i] = Marshal.ReadByte(_MidiHeader.Data, i);
             }
 
+            // Extract the status byte
+            this.Status = this.Data[0];
+
             // Extract message parameter B
             this.TimeStamp = (int)messageParameterB;
 
@@ -160,6 +171,7 @@ namespace MidiXL
         internal LongMessage(byte[] data)
         {
             this.Data = data;
+            this.Status = data[0];
         }
 
         #endregion
@@ -175,6 +187,11 @@ namespace MidiXL
         /// Gets a reference to the second message parameter of the MIDI long message.
         /// </summary>
         internal IntPtr ParameterB { get; private set; }
+
+        /// <summary>
+        /// Gets the status byte of the MIDI long message.
+        /// </summary>
+        internal int Status { get; private set; }
 
         /// <summary>
         /// Gets the time the MIDI long message received since the MIDI input device started.
@@ -620,6 +637,72 @@ namespace MidiXL
         {
             get { return DataA; }
         }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Defines a system exclusive MIDI message.
+    /// </summary>
+    public sealed class SystemExclusiveMessage : LongMessage
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="SystemExclusiveMessage"/> from the specified data.
+        /// </summary>
+        /// <param name="data">A <see cref="byte[]"/> array containting the raw system exclusive data.</param>
+        public SystemExclusiveMessage(byte[] data) : base(data) { }
+
+        /// <summary>
+        /// Creates and initializes a <see cref="SystemExclusiveMessage"/> from the specified <see cref="LongMessage"/>.
+        /// </summary>
+        /// <param name="message">The <see cref="LongMessage"/> to initilize the <see cref="SystemExclusiveMessage"/> from.</param>
+        internal SystemExclusiveMessage(LongMessage message) : base(message) { }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Defines a MIDI universal system exlusive non real time message.
+    /// </summary>
+    public sealed class UniversalNonRealTimeMessage : LongMessage
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="UniversalNonRealTimeMessage"/> from the specified data.
+        /// </summary>
+        /// <param name="data">A <see cref="byte[]"/> containting the raw universal non real time data.</param>
+        public UniversalNonRealTimeMessage(byte[] data) : base(data) { }
+
+        /// <summary>
+        /// Creates and initializes a <see cref="LongMessage"/> from the specified <see cref="UniversalNonRealTimeMessage"/>.
+        /// </summary>
+        /// <param name="message">A <see cref="LongMessage"/> to initilize the <see cref="UniversalNonRealTimeMessage"/> from.</param>
+        internal UniversalNonRealTimeMessage(LongMessage message) : base(message) { }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Defines a MIDI universal system exclusive real time message.
+    /// </summary>
+    public sealed class UniversalRealTimeMessage : LongMessage
+    {
+        #region Constructor
+
+        /// <summary>
+        /// Creates and initializes a <see cref="UniversalRealTimeMessage"/> and initializes it with the provided data.
+        /// </summary>
+        /// <param name="data">A <see cref="byte[]"/> containting the raw universal real time data.</param>
+        public UniversalRealTimeMessage(byte[] data) : base(data) { }
+
+        /// <summary>
+        /// Creates and initializes a <see cref="LongMessage"/> from the specified <see cref="UniversalRealTimeMessage"/>.
+        /// </summary>
+        /// <param name="message">A <see cref="LongMessage"/> to initilize the <see cref="UniversalRealTimeMessage"/> from.</param>
+        internal UniversalRealTimeMessage(LongMessage message) : base(message) { }
 
         #endregion
     }

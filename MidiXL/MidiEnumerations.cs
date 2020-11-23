@@ -41,7 +41,7 @@
     /// <summary>
     /// Defines constant values representing MIDI universal system exclusive message type status bytes.
     /// </summary>
-    public enum UniversalSystemExclusiveMessageType : byte
+    public enum UniversalSystemExclusiveMessageTypes : byte
     {
         UniversalNonRealTime = 0x7E,
         UniversalRealTime    = 0x7F

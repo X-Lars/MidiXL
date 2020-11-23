@@ -47,6 +47,30 @@ namespace MidiXL
         private static extern Result midiOutReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
+        /// See <see cref="SendShortMessage"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutShortMsg(MidiDeviceHandle deviceHandle, int message);
+
+        /// <summary>
+        /// See <see cref="SendLongMessage"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutLongMsg(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
+
+        /// <summary>
+        /// See <see cref="PrepareMidiOutputHeader"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutPrepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
+
+        /// <summary>
+        /// See <see cref="UnprepareMidiOutputHeader"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiOutUnprepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
+
+        /// <summary>
         /// See <see cref="GetMidiOutputDeviceErrorText"/> for information.
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
@@ -93,6 +117,24 @@ namespace MidiXL
         /// </summary>
         [DllImport("winmm.dll", SetLastError = true)]
         private static extern Result midiInStop(MidiDeviceHandle deviceHandle);
+
+        /// <summary>
+        /// See <see cref="AddMidiInputBuffer"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInAddBuffer(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
+
+        /// <summary>
+        /// See <see cref="PrepareMidiInputHeader"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInPrepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
+
+        /// <summary>
+        /// See <see cref="UnprepareMidiInputHeader"/> for information.
+        /// </summary>
+        [DllImport("winmm.dll", SetLastError = true)]
+        private static extern Result midiInUnprepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="GetMidiInputDeviceErrorText"/> for information.
@@ -509,6 +551,89 @@ namespace MidiXL
         public static Result DisconnectMidiDevices(MidiDeviceHandle inputMidiDeviceHandle, MidiDeviceHandle outputMidiDeviceHandle)
         {
             return midiDisconnect(inputMidiDeviceHandle, outputMidiDeviceHandle, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Sends a short MIDI message to the specified <see cref="MidiOutputDevice"/>.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to send the short MIDI message to.</param>
+        /// <param name="message">An <see cref="int"/> containting the MIDI message to send.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result SendShortMessage(MidiDeviceHandle deviceHandle, int message)
+        {
+            return midiOutShortMsg(deviceHandle, message);
+        }
+
+        /// <summary>
+        /// Sends a long MIDI message to the specified <see cref="MidiOutputDevice"/>.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to send the short MIDI message to.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure containing the data to send.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result SendLongMessage(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiOutLongMsg(deviceHandle, midiHeader, midiHeaderSize);
+        }
+
+        /// <summary>
+        /// Prepares a MIDI system exclusive or stream buffer for output.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to prepare the buffer for.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure that identifies the buffer to be prepared.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result PrepareMidiOutputHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiOutPrepareHeader(deviceHandle, midiHeader, midiHeaderSize);
+        }
+
+        /// <summary>
+        /// Cleans the preparation performed by the <see cref="PrepareMidiOutputHeader"/> method.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output device to unprepare the buffer for.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure that identifies the buffer to be unprepared.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result UnprepareMidiOutputHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiOutUnprepareHeader(deviceHandle, midiHeader, midiHeaderSize);
+        }
+
+        /// <summary>
+        /// Adds a buffer to the MIDI input device in order to receive long MIDI messages.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input device to add the buffer to.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure that identifies the buffer to add.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result AddMidiInputBuffer(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiInAddBuffer(deviceHandle, midiHeader, midiHeaderSize);
+        }
+
+        /// <summary>
+        /// Prepares a MIDI system exclusive or stream buffer for input.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input device to prepare the buffer for.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure that identifies the buffer to be prepared.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result PrepareMidiInputHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiInPrepareHeader(deviceHandle, midiHeader, midiHeaderSize);
+        }
+
+        /// <summary>
+        /// Cleans the preparation performed by the <see cref="PrepareMidiInputHeader"/> method.
+        /// </summary>
+        /// <param name="deviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input device to unprepare the buffer for.</param>
+        /// <param name="midiHeader">A <see cref="IntPtr"/> referencing the <see cref="MidiHeader"/> structure that identifies the buffer to be unprepared.</param>
+        /// <param name="midiHeaderSize">An <see cref="int"/> specifying the size in bytes of the <see cref="MidiHeader"/> structure.</param>
+        /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
+        internal static Result UnprepareMidiInputHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize)
+        {
+            return midiInUnprepareHeader(deviceHandle, midiHeader, midiHeaderSize);
         }
 
         #endregion

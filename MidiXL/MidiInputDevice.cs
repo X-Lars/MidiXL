@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -78,6 +79,21 @@ namespace MidiXL
         /// Event raised when a <see cref="ChannelAfterTouchMessage"/> is received.
         /// </summary>
         public event EventHandler<ChannelAfterTouchMessageEventArgs> ChannelAfterTouchReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="SystemExclusiveMessage"/> is received.
+        /// </summary>
+        public event EventHandler<SystemExclusiveMessageEventArgs> SystemExclusiveReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="UniversalRealTimeMessage"/> is received.
+        /// </summary>
+        public event EventHandler<UniversalRealTimeMessageEventArgs> UniversalRealTimeReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="UniversalNonRealTimeMessage"/> is received.
+        /// </summary>
+        public event EventHandler<UniversalNonRealTimeMessageEventArgs> UniversalNonRealTimeReceived;
 
         #endregion
 
@@ -183,7 +199,8 @@ namespace MidiXL
         /// <exception cref="MidiInputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
         public void Start()
         {
-            // TODO: Buffering for long MIDI messages
+            // Create buffer to receive long MIDI messages
+            _Buffer.Add(CreateBuffer());
 
             InvalidateResult(API.StartMidiInputDevice(_Handle));
         }
@@ -230,6 +247,7 @@ namespace MidiXL
         /// <param name="messageParameterB">An <see cref="IntPtr"/> to the second message parameter.</param>
         private void Callback(API.MidiDeviceHandle handle, API.MidiInputMessage message, IntPtr instance, IntPtr messageParameterA, IntPtr messageParameterB)
         {
+            Debug.Print($"[MidiInputDevice] Callback");
             switch(message)
             {
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_DATA:
@@ -239,6 +257,7 @@ namespace MidiXL
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_LONG_DATA:
                     // A = Pointer to MIDI header, B = Time in milliseconds since Start
+                    ProcessLongMessage(new LongMessage(messageParameterA, messageParameterB));
                     break;
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_MORE_DATA:
@@ -302,11 +321,121 @@ namespace MidiXL
                     case ChannelMessageTypes.ChannelAfterTouch:
                         ChannelAfterTouchReceived?.Invoke(this, new ChannelAfterTouchMessageEventArgs(new ChannelAfterTouchMessage(message)));
                         break;
-
-                    default:
-                        break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Processes the provided <see cref="LongMessage"/> and raises associated events.
+        /// </summary>
+        /// <param name="message">A <see cref="LongMessage"/> to process and raise events for.</param>
+        private void ProcessLongMessage(LongMessage message)
+        {
+            if(message.Status == (int)SystemExclusiveMessageTypes.SystemExclusive)
+            {
+                SystemExclusiveReceived?.Invoke(this, new SystemExclusiveMessageEventArgs(new SystemExclusiveMessage(message)));
+            }
+            else if (message.Status == (int)UniversalSystemExclusiveMessageTypes.UniversalRealTime)
+            {
+                UniversalRealTimeReceived?.Invoke(this, new UniversalRealTimeMessageEventArgs(new UniversalRealTimeMessage(message)));
+            }
+            else if (message.Status == (int)UniversalSystemExclusiveMessageTypes.UniversalNonRealTime)
+            {
+                UniversalNonRealTimeReceived?.Invoke(this, new UniversalNonRealTimeMessageEventArgs(new UniversalNonRealTimeMessage(message)));
+            }
+        }
+
+        /// <summary>
+        /// Creates a buffer for receiving <see cref="LongMessage"/>s.
+        /// </summary>
+        /// <returns>An <see cref="IntPtr"/> referencing the created buffer.</returns>
+        /// <exception cref="MidiInputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #64: MIDI_ERROR_UNPREPARED, the buffer pointed to by the MIDI header has not been prepared.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, the buffer pointed to by the MIDI header is still in the queue.</exception>
+        private IntPtr CreateBuffer()
+        {
+            IntPtr midiHeaderPointer;
+
+            int headerSize = Marshal.SizeOf(typeof(API.MidiHeader));
+
+            API.MidiHeader midiHeader = new API.MidiHeader();
+
+            // TODO: Optimize buffer size
+            midiHeader.Data = Marshal.AllocHGlobal(512);
+            midiHeader.BufferSize = 512;
+            midiHeader.Flags = 0;
+
+            try
+            {
+                midiHeaderPointer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(API.MidiHeader)));
+            }
+            catch (Exception)
+            {
+                Marshal.FreeHGlobal(midiHeader.Data);
+                throw;
+            }
+
+            try
+            {
+                Marshal.StructureToPtr(midiHeader, midiHeaderPointer, false);
+            }
+            catch (Exception)
+            {
+                Marshal.FreeHGlobal(midiHeader.Data);
+                Marshal.FreeHGlobal(midiHeaderPointer);
+                throw;
+            }
+
+            InvalidateResult(API.PrepareMidiInputHeader(_Handle, midiHeaderPointer, headerSize));
+            InvalidateResult(API.AddMidiInputBuffer(_Handle, midiHeaderPointer, headerSize));
+
+            return midiHeaderPointer;
+        }
+
+        /// <summary>
+        /// Recycles an existing buffer for receiving <see cref="LongMessage"/>s.
+        /// </summary>
+        /// <param name="buffer">An <see cref="IntPtr"/> referencing the buffer to recycle.</param>
+        /// <returns>An <see cref="IntPtr"/> referencing the recycled buffer.</returns>
+        /// <exception cref="MidiInputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #64: MIDI_ERROR_UNPREPARED, the buffer pointed to by the MIDI header has not been prepared.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, the buffer pointed to by the MIDI header is still in the queue.</exception>
+        private IntPtr RecycleBuffer(IntPtr buffer)
+        {
+            IntPtr headerPointer = unchecked((IntPtr)(long)(ulong)buffer);
+            int headerSize = Marshal.SizeOf(typeof(API.MidiHeader));
+
+            InvalidateResult(API.UnprepareMidiInputHeader(_Handle, headerPointer, headerSize));
+            InvalidateResult(API.PrepareMidiInputHeader(_Handle, headerPointer, headerSize));
+            InvalidateResult(API.AddMidiInputBuffer(_Handle, headerPointer, headerSize));
+
+            return headerPointer;
+        }
+
+        /// <summary>
+        /// Releases an existing buffer and associated memory.
+        /// </summary>
+        /// <param name="buffer">An <see cref="IntPtr"/> referencing the buffer to release.</param>
+        /// <exception cref="MidiInputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
+        /// <exception cref="MidiInputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, the buffer pointed to by the MIDI header is still in the queue.</exception>
+        private void ReleaseBuffer(IntPtr buffer)
+        {
+            IntPtr headerPointer = unchecked((IntPtr)(long)(ulong)buffer);
+            int headerSize = (int)Marshal.SizeOf(typeof(API.MidiHeader));
+
+            InvalidateResult(API.UnprepareMidiInputHeader(_Handle, headerPointer, headerSize));
+
+            API.MidiHeader midiHeader = (API.MidiHeader)Marshal.PtrToStructure(headerPointer, typeof(API.MidiHeader));
+
+            Marshal.FreeHGlobal(midiHeader.Data);
+            Marshal.FreeHGlobal(headerPointer);
+
+            _Buffer.Remove(headerPointer);
         }
 
         /// <summary>
