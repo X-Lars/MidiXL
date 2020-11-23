@@ -21,7 +21,7 @@
         Min               = 0x80,
         NoteOff           = 0x80,
         NoteOn            = 0x90,
-        PolyKeyPressure   = 0xA0,
+        KeyAfterTouch     = 0xA0,
         ControlChange     = 0xB0,
         ProgramChange     = 0xC0,
         ChannelAfterTouch = 0xD0,

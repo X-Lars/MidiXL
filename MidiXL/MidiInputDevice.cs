@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +39,45 @@ namespace MidiXL
         /// Lock for thread safety.
         /// </summary>
         private static readonly object _Lock = new object();
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Event raised when a <see cref="NoteOnMessage"/> is received.
+        /// </summary>
+        public event EventHandler<NoteOnMessageEventArgs> NoteOnReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="NoteOffMessage"/> is received.
+        /// </summary>
+        public event EventHandler<NoteOffMessageEventArgs> NoteOffReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="ControlChangeMessage"/> is received.
+        /// </summary>
+        public event EventHandler<ControlChangeMessageEventArgs> ControlChangeReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="ProgramChangeMessage"/> is received.
+        /// </summary>
+        public event EventHandler<ProgramChangeMessageEventArgs> ProgramChangeReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="PitchBendMessage"/> is received.
+        /// </summary>
+        public event EventHandler<PitchBendMessageEventArgs> PitchBendReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="KeyAfterTouchMessage"/> is received;
+        /// </summary>
+        public event EventHandler<KeyAfterTouchMessageEventArgs> KeyAfterTouchReceived;
+
+        /// <summary>
+        /// Event raised when a <see cref="ChannelAfterTouchMessage"/> is received.
+        /// </summary>
+        public event EventHandler<ChannelAfterTouchMessageEventArgs> ChannelAfterTouchReceived;
 
         #endregion
 
@@ -193,21 +233,34 @@ namespace MidiXL
             switch(message)
             {
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_DATA:
+                    // A = Packed MIDI message, B = Time in milliseconds since Start
                     ProcessShortMessage(new ShortMessage(messageParameterA, messageParameterB));
                     break;
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_LONG_DATA:
+                    // A = Pointer to MIDI header, B = Time in milliseconds since Start
+                    break;
+
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_MORE_DATA:
+                    // A = Packed MIDI message, B = Time in milliseconds since Start
+                    break;
+
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_ERROR:
+                    // A = Invalid MIDI message, B = Time in milliseconds since Start
+                    break;
+
+                case API.MidiInputMessage.MIDI_INPUT_MESSAGE_LONG_ERROR:
+                    // A = Pointer to MIDI header, B = Time in milliseconds since Start
                     break;
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_OPEN:
+                    // A = Unused, B = unused
                     this.IsOpen = true;
                     break;
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_CLOSE:
+                    // A = Unused, B = unused
                     this.IsOpen = false;
-                    break;
-
-                default:
                     break;
             }
         }
@@ -220,10 +273,34 @@ namespace MidiXL
         {
             if((message.Status & 0xF0) >= (int)ChannelMessageTypes.Min && (message.Status & 0xF0) <= (int)ChannelMessageTypes.Max)
             {
-                // Channel message
                 switch((ChannelMessageTypes)message.Status)
                 {
                     case ChannelMessageTypes.NoteOn:
+                        NoteOnReceived?.Invoke(this, new NoteOnMessageEventArgs(new NoteOnMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.NoteOff:
+                        NoteOffReceived?.Invoke(this, new NoteOffMessageEventArgs(new NoteOffMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.ControlChange:
+                        ControlChangeReceived?.Invoke(this, new ControlChangeMessageEventArgs(new ControlChangeMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.ProgramChange:
+                        ProgramChangeReceived?.Invoke(this, new ProgramChangeMessageEventArgs(new ProgramChangeMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.PitchBend:
+                        PitchBendReceived?.Invoke(this, new PitchBendMessageEventArgs(new PitchBendMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.KeyAfterTouch:
+                        KeyAfterTouchReceived?.Invoke(this, new KeyAfterTouchMessageEventArgs(new KeyAfterTouchMessage(message)));
+                        break;
+
+                    case ChannelMessageTypes.ChannelAfterTouch:
+                        ChannelAfterTouchReceived?.Invoke(this, new ChannelAfterTouchMessageEventArgs(new ChannelAfterTouchMessage(message)));
                         break;
 
                     default:
