@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="API.cs" />
     <Compile Include="MidiDevice.cs" />
+    <Compile Include="DeviceManager.cs" />
     <Compile Include="MidiEnumerations.cs" />
     <Compile Include="MidiInputDevice.cs" />
     <Compile Include="MidiMessageEventArguments.cs" />

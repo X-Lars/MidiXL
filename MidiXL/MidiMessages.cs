@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MidiXL
 {
@@ -202,6 +199,19 @@ namespace MidiXL
         /// Gets the data of the MIDI long message.
         /// </summary>
         public byte[] Data { get; private set; }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Converts the <see cref="LongMessage.Data"/> to a hexadecimal <see cref="string"/> representation.
+        /// </summary>
+        /// <returns>A formatted <see cref="string"/> representing the <see cref="LongMessage.Data"/> in hexadecimal format.</returns>
+        public override string ToString()
+        {
+            return string.Join(" ", this.Data.Select(x => string.Format("{0:X2}", x)));
+        }
 
         #endregion
     }

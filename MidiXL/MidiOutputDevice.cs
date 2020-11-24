@@ -21,11 +21,6 @@ namespace MidiXL
         private API.MidiOutputDeviceCapabilities _Capabilities;
 
         /// <summary>
-        /// Array to store the MIDI output devices installed in the system.
-        /// </summary>
-        private static MidiOutputDevice[] _DeviceList = null;
-
-        /// <summary>
         /// Reference to the callback function used by the <see cref="API.OpenMidiOutputDevice"/> method.
         /// </summary>
         private API.MidiOutputDelegate _Callback;
@@ -44,7 +39,7 @@ namespace MidiXL
         /// </summary>
         /// <param name="deviceID">An <see cref="int"/> representing the unique indexed <see cref="MidiOutputDevice"/>'s ID.</param>
         /// <param name="capabilities">An <see cref="API.MidiOutputDeviceCapabilities"/> structure to store the <see cref="MidiOutputDevice"/>'s capabilities.</param>
-        private MidiOutputDevice(int deviceID, API.MidiOutputDeviceCapabilities capabilities) : base(deviceID, capabilities)
+        internal MidiOutputDevice(int deviceID, API.MidiOutputDeviceCapabilities capabilities) : base(deviceID, capabilities)
         {
             _Capabilities = capabilities;
             _Callback = Callback;
@@ -55,22 +50,6 @@ namespace MidiXL
         #region Properties
 
         /// <summary>
-        /// Gets a list installed MIDI output devices installed in the system.
-        /// </summary>
-        public static ReadOnlyCollection<MidiOutputDevice> DeviceList
-        {
-            get 
-            { 
-                lock(_Lock)
-                {
-                    InitializeDeviceList();
-
-                    return new ReadOnlyCollection<MidiOutputDevice>(_DeviceList);
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets whether the MIDI output device is openend or closed.
         /// </summary>
         public bool IsOpen { get; private set; }
@@ -78,27 +57,6 @@ namespace MidiXL
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Initializes the internal list of installed MIDI output devices.
-        /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #2: MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID, the specified device ID is out of range.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #6: MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER, the driver is not installed.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        private static void InitializeDeviceList()
-        {
-            _DeviceList = new MidiOutputDevice[API.MidiOutputDeviceCount()];
-
-            for (int deviceID = 0; deviceID < _DeviceList.Length; deviceID++)
-            {
-                API.MidiOutputDeviceCapabilities capabilities = new API.MidiOutputDeviceCapabilities();
-
-                InvalidateResult(API.GetMidiOutputDeviceCapabilities(deviceID, ref capabilities));
-
-                _DeviceList[deviceID] = new MidiOutputDevice(deviceID, capabilities);
-            }
-        }
 
         /// <summary>
         /// Opens the MIDI output device for sending MIDI messages.
@@ -174,7 +132,11 @@ namespace MidiXL
             {
                 this.IsOpen = false;
             }
-            else if (message == API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_DONE) { }
+            else 
+            { 
+                // API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_DONE
+            }
+            
         }
 
         /// <summary>
@@ -252,7 +214,7 @@ namespace MidiXL
         /// Invalidates the result returned by API calls for errors and throws a <see cref="MidiOutputDeviceException"/> if an error occured.
         /// </summary>
         /// <param name="result">An <see cref="API.Result"/> value containing the result of the API call.</param>
-        private static void InvalidateResult(API.Result result)
+        internal static void InvalidateResult(API.Result result)
         {
             if(result != API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_ERROR)
             {

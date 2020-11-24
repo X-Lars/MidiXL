@@ -22,11 +22,6 @@ namespace MidiXL
         private API.MidiInputDeviceCapabilities _Capabilities;
 
         /// <summary>
-        /// Array to store the MIDI input devices installed in the system.
-        /// </summary>
-        private static MidiInputDevice[] _DeviceList = null;
-
-        /// <summary>
         /// Reference to the callback function used by the <see cref="API.OpenMidiInputDevice"/> method.
         /// </summary>
         private API.MidiInputDelegate _Callback;
@@ -104,7 +99,7 @@ namespace MidiXL
         /// </summary>
         /// <param name="deviceID">An <see cref="int"/> representing the unique indexed <see cref="MidiInputDevice"/>'s ID.</param>
         /// <param name="capabilities">An <see cref="API.MidiInputDeviceCapabilities"/> structure to store the <see cref="MidiInputDevice"/>'s capabilities.</param>
-        private MidiInputDevice(int deviceID, API.MidiInputDeviceCapabilities capabilities) : base(deviceID, capabilities)
+        internal MidiInputDevice(int deviceID, API.MidiInputDeviceCapabilities capabilities) : base(deviceID, capabilities)
         {
             _Capabilities = capabilities;
             _Callback = Callback;
@@ -115,22 +110,6 @@ namespace MidiXL
         #region Properties
 
         /// <summary>
-        /// Gets a list installed MIDI input devices installed in the system.
-        /// </summary>
-        public static ReadOnlyCollection<MidiInputDevice> DeviceList
-        {
-            get
-            {
-                lock (_Lock)
-                {
-                    InitializeDeviceList();
-
-                    return new ReadOnlyCollection<MidiInputDevice>(_DeviceList);
-                }
-            }
-        }
-
-        /// <summary>
         /// Gets whether the MIDI input device is openend or closed.
         /// </summary>
         public bool IsOpen { get; private set; }
@@ -138,27 +117,6 @@ namespace MidiXL
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Initializes the internal list of installed MIDI input devices.
-        /// </summary>
-        /// <exception cref="MidiInputDeviceException">Raises error #2: MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID, the specified device ID is out of range.</exception>
-        /// <exception cref="MidiInputDeviceException">Raises error #6: MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER, the driver is not installed.</exception>
-        /// <exception cref="MidiInputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
-        /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        private static void InitializeDeviceList()
-        {
-            _DeviceList = new MidiInputDevice[API.MidiInputDeviceCount()];
-
-            for (int deviceID = 0; deviceID < _DeviceList.Length; deviceID++)
-            {
-                API.MidiInputDeviceCapabilities capabilities = new API.MidiInputDeviceCapabilities();
-
-                InvalidateResult(API.GetMidiInputDeviceCapabilities(deviceID, ref capabilities));
-
-                _DeviceList[deviceID] = new MidiInputDevice(deviceID, capabilities);
-            }
-        }
 
         /// <summary>
         /// Opens the MIDI input device for receiving MIDI messages.
@@ -343,6 +301,9 @@ namespace MidiXL
             {
                 UniversalNonRealTimeReceived?.Invoke(this, new UniversalNonRealTimeMessageEventArgs(new UniversalNonRealTimeMessage(message)));
             }
+
+            //ReleaseBuffer(message.ParameterA);
+            RecycleBuffer(message.ParameterA);
         }
 
         /// <summary>
@@ -363,8 +324,8 @@ namespace MidiXL
             API.MidiHeader midiHeader = new API.MidiHeader();
 
             // TODO: Optimize buffer size
-            midiHeader.Data = Marshal.AllocHGlobal(512);
-            midiHeader.BufferSize = 512;
+            midiHeader.Data = Marshal.AllocHGlobal(256);
+            midiHeader.BufferSize = 256;
             midiHeader.Flags = 0;
 
             try
@@ -398,13 +359,13 @@ namespace MidiXL
         /// Recycles an existing buffer for receiving <see cref="LongMessage"/>s.
         /// </summary>
         /// <param name="buffer">An <see cref="IntPtr"/> referencing the buffer to recycle.</param>
-        /// <returns>An <see cref="IntPtr"/> referencing the recycled buffer.</returns>
+        //// <returns>An <see cref="IntPtr"/> referencing the recycled buffer.</returns>
         /// <exception cref="MidiInputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #64: MIDI_ERROR_UNPREPARED, the buffer pointed to by the MIDI header has not been prepared.</exception>
         /// <exception cref="MidiInputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, the buffer pointed to by the MIDI header is still in the queue.</exception>
-        private IntPtr RecycleBuffer(IntPtr buffer)
+        private void RecycleBuffer(IntPtr buffer)
         {
             IntPtr headerPointer = unchecked((IntPtr)(long)(ulong)buffer);
             int headerSize = Marshal.SizeOf(typeof(API.MidiHeader));
@@ -412,8 +373,6 @@ namespace MidiXL
             InvalidateResult(API.UnprepareMidiInputHeader(_Handle, headerPointer, headerSize));
             InvalidateResult(API.PrepareMidiInputHeader(_Handle, headerPointer, headerSize));
             InvalidateResult(API.AddMidiInputBuffer(_Handle, headerPointer, headerSize));
-
-            return headerPointer;
         }
 
         /// <summary>
@@ -442,7 +401,7 @@ namespace MidiXL
         /// Invalidates the result returned by API calls for errors and throws a <see cref="MidiInputDeviceException"/> if an error occured.
         /// </summary>
         /// <param name="result">An <see cref="API.Result"/> value containing the result of the API call.</param>
-        private static void InvalidateResult(API.Result result)
+        internal static void InvalidateResult(API.Result result)
         {
             if (result != API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_ERROR)
             {
