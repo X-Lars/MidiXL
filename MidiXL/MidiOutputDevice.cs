@@ -11,7 +11,7 @@ namespace MidiXL
     /// <summary>
     /// 
     /// </summary>
-    public class MidiOutputDevice : MidiDevice
+    public sealed class MidiOutputDevice : MidiDevice
     {
         #region Fields
 
@@ -49,11 +49,6 @@ namespace MidiXL
 
         #region Properties
 
-        /// <summary>
-        /// Gets whether the MIDI output device is openend or closed.
-        /// </summary>
-        public bool IsOpen { get; private set; }
-
         #endregion
 
         #region Methods
@@ -61,34 +56,39 @@ namespace MidiXL
         /// <summary>
         /// Opens the MIDI output device for sending MIDI messages.
         /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #2: MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID, the specified device ID is out of range.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #4: MULTIMEDIA_SYSTEM_ERROR_ALLOCATED when the device is alread opened.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #68: MIDI_ERROR_NO_DEVICE, no MIDI port was found, only occurs when the mapper is opened.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_ALLOCATED"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_MEM"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_NO_DEVICE"/>.</exception>
         public void Open()
         {
+            if (IsOpen)
+                return;
+
             InvalidateResult(API.OpenMidiOutputDevice(ref _Handle, this.ID, _Callback, IntPtr.Zero));
         }
 
         /// <summary>
         /// Closes the MIDI output device.
         /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, buffers are still in the queue.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_MEM"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_STILL_PLAYING"/>.</exception>
         public void Close()
         {
-            InvalidateResult(API.CloseMidiOutputDevice(_Handle));
+            if(IsOpen)
+                InvalidateResult(API.CloseMidiOutputDevice(_Handle));
         }
 
         /// <summary>
         /// Turns off all notes on all MIDI channels.
         /// </summary>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
         public void Reset()
         {
-            InvalidateResult(API.ResetMidiOutputDevice(_Handle));
+            if(IsOpen)
+                InvalidateResult(API.ResetMidiOutputDevice(_Handle));
         }
 
         /// <summary>
@@ -96,22 +96,37 @@ namespace MidiXL
         /// Received <see cref="API.MidiInputMessage"/>s are sent through to the connected MIDI output or thru device.
         /// </summary>
         /// <param name="device">A <see cref="MidiInputDevice"/> or MIDI thru device to connect to.</param>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #67: MIDI_ERROR_NOT_READY, the specified input device is already connected to an output device.</exception>
-        /// <remarks>For MIDI thru devices, a handle must be obtained by a calling the <see cref="API.OpenMidiOutputDevice"/> method.</remarks>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_NOT_READY"/>.</exception>
+        /// <remarks><i>For MIDI thru devices, a handle must be obtained by a calling the <see cref="API.OpenMidiOutputDevice"/> method.</i></remarks>
         public void Connect(MidiInputDevice device)
         {
             InvalidateResult(API.ConnectMidiDevices(device._Handle, _Handle));
+
+            _Connections.Add(device._Handle);
         }
 
         /// <summary>
         /// Disconnects the MIDI output device from a MIDI input or thru device.
         /// </summary>
         /// <param name="device">A <see cref="MidiInputDevice"/> or MIDI thru device to disconnect from.</param>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
         public void Disconnect(MidiInputDevice device)
         {
             InvalidateResult(API.DisconnectMidiDevices(device._Handle, _Handle));
+
+            _Connections.Remove(device._Handle);
+        }
+
+        /// <summary>
+        /// Disconnects the MIDI output device from all connected MIDI devices.
+        /// </summary>
+        private void Disconnect()
+        {
+            foreach (API.MidiDeviceHandle connection in _Connections)
+            {
+                InvalidateResult(API.DisconnectMidiDevices(connection, _Handle));
+            }
         }
 
         /// <summary>
@@ -143,24 +158,24 @@ namespace MidiXL
         /// Sends a short MIDI message.
         /// </summary>
         /// <param name="message">The short MIDI message to send.</param>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #67: MIDI_ERROR_NOT_READY, the specified input device is already connected to an output device.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #70: MIDI_ERROR_BAD_OPEN_MODE, the application sent a message without a status byte to a stream handle.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_NOT_READY"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_BAD_OPEN_MODE"/>.</exception>
         public void Send(ShortMessage message)
         {
-            InvalidateResult(API.SendShortMessage(_Handle, message.Message));
+            InvalidateResult(API.SendShortMessage(_Handle, message.Data));
         }
 
         /// <summary>
         /// Sends a long MIDI message.
         /// </summary>
         /// <param name="message">The long MIDI message to send.</param>
-        /// <exception cref="MidiOutputDeviceException">Raises error #5: MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE, the specified device handle is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #7: MULTIMEDIA_SYSTEM_ERROR_NO_MEM, the system is unable to allocate or lock memory.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #11: MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER, the specified pointer or structure is invalid.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #64: MIDI_ERROR_UNPREPARED, the buffer pointed to by the MIDI header has not been prepared.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #65: MIDI_ERROR_STILL_PLAYING, the buffer pointed to by the MIDI header is still in the queue.</exception>
-        /// <exception cref="MidiOutputDeviceException">Raises error #67: MIDI_ERROR_NOT_READY, the specified input device is already connected to an output device.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_MEM"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_UNPREPARED"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_STILL_PLAYING"/>.</exception>
+        /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_NOT_READY"/>.</exception>
         public void Send(LongMessage message)
         {
             IntPtr midiHeaderPointer;
@@ -219,6 +234,33 @@ namespace MidiXL
             if(result != API.Result.MULTIMEDIA_SYSTEM_ERROR_NO_ERROR)
             {
                 throw new MidiOutputDeviceException(result);
+            }
+        }
+
+        /// <summary>
+        /// Disposes the MIDI output device.
+        /// </summary>
+        /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
+        protected override void Dispose(bool isDisposing)
+        {
+            if(!_IsDisposed)
+            {
+                if(isDisposing)
+                {
+                    if(Handle != IntPtr.Zero)
+                    {
+                        Reset();
+                        Close();
+                        Disconnect();
+
+                        _Connections = null;
+                        _Callback = null;
+
+                        Handle = IntPtr.Zero;
+                    }
+                }
+
+                _IsDisposed = true;
             }
         }
 

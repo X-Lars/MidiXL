@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace MidiXL
 {
     /// <summary>
     /// Common base class for MIDI input and output devices.
     /// </summary>
-    public abstract class MidiDevice
+    public abstract class MidiDevice : IDisposable
     {
         #region Fields
 
@@ -13,6 +14,16 @@ namespace MidiXL
         /// A handle to reference the <see cref="MidiDevice"/> in API calls.
         /// </summary>
         internal protected API.MidiDeviceHandle _Handle;
+
+        /// <summary>
+        /// Tracks whether <see cref="Dispose"/> has been called.
+        /// </summary>
+        internal protected bool _IsDisposed = false;
+
+        /// <summary>
+        /// Stores connected MIDI devices.
+        /// </summary>
+        internal protected List<API.MidiDeviceHandle> _Connections = new List<API.MidiDeviceHandle>();
 
         #endregion
 
@@ -44,6 +55,15 @@ namespace MidiXL
             this.Handle = IntPtr.Zero;
         }
 
+        /// <summary>
+        /// Finalizes the the <see cref="MidiDevice"/>.
+        /// </summary>
+        ~MidiDevice()
+        {
+            // Call the Dispose(bool) method signaling it is called by the runtime
+            Dispose(false);
+        }
+
         #endregion
 
         #region Properties
@@ -51,10 +71,10 @@ namespace MidiXL
         /// <summary>
         /// Gets or sets the handle of the device.
         /// </summary>
-        public IntPtr Handle 
+        protected IntPtr Handle 
         { 
             get { return _Handle.Handle; }
-            internal protected set { _Handle.Handle = value; }
+            set { _Handle.Handle = value; }
         }
 
         /// <summary>
@@ -71,6 +91,39 @@ namespace MidiXL
         /// Gets the type of device.
         /// </summary>
         public API.MidiDeviceType Type { get; }
+
+        /// <summary>
+        /// Gets whether the MIDI device is openend or closed.
+        /// </summary>
+        protected bool IsOpen { get; set; } = false;
+
+        /// <summary>
+        /// Gets wheter the MIDI device is connected to another MIDI device.
+        /// </summary>
+        protected bool IsConnected { get; set; } = false;
+
+        #endregion
+
+        #region IDisposable
+
+        /// <summary>
+        /// Disposes the MIDI device.
+        /// </summary>
+        public void Dispose()
+        {
+            // Call the Dispose(bool) method signaling it is called from code
+            Dispose(true);
+
+            // Takes the MIDI device off the finalization queue to prevent executing finalization code twice
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Disposes the MIDI device.
+        /// </summary>
+        /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
+        /// <remarks><i>If called from code managed and unmagaged resources have to be disposed else the runtime handles the managed resources and only unmanaged resource have to be disposed.</i></remarks>
+        protected abstract void Dispose(bool isDisposing);
 
         #endregion
     }

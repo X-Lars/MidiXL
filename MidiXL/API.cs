@@ -202,17 +202,46 @@ namespace MidiXL
         public enum Result : int
         {
             // Multimedia system general return codes
+            /// <summary>
+            /// The operation was succesul.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_NO_ERROR            = 0,  // Operation was succesful
+
+            /// <summary>
+            /// An unspecified error occured.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_ERROR               = 1,  // Unspecified error
+
+            /// <summary>
+            /// The specified device ID is out of range.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID       = 2,  // An out of range device ID was specified
             MULTIMEDIA_SYSTEM_ERROR_NOT_ENABLED         = 3,  // Driver not enabled
+
+            /// <summary>
+            /// The device is alread opened.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_ALLOCATED           = 4,  // The device is already open and is not available
+
+            /// <summary>
+            /// The specified device handle is invalid.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE      = 5,  // An invalid device handle was specified, or the device is closed and the handle is no longer valid.
             MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER           = 6,  // No device driver is present for this device
+
+            /// <summary>
+            /// The system is unable to allocate or lock memory.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_NO_MEM              = 7,  // Driver memory allocation error
             MULTIMEDIA_SYSTEM_ERROR_NOT_SUPPORTED       = 8,  // Unsupported function
             MULTIMEDIA_SYSTEM_ERROR_BAD_ERROR_NUMBER    = 9,  // Error value out of range
+            /// <summary>
+            /// The flags specified are invalid.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_INVALID_FLAG        = 10, // Invalid flag passed
+            /// <summary>
+            /// The specified pointer or structure is invalid.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER   = 11, // Invalid parameter passed
             MULTIMEDIA_SYSTEM_ERROR_HANDLE_BUSY         = 12, // Handle being used simultaneously on another thread
             MULTIMEDIA_SYSTEM_ERROR_INVALID_ALIAS       = 13, // Specified alias not found
@@ -226,12 +255,28 @@ namespace MidiXL
             MULTIMEDIA_SYSTEM_ERROR_LAST_ERROR          = 20, // Last error
             
             // Multimedia system MIDI specific return codes
+            /// <summary>
+            /// The buffer pointed to by the MIDI header has not been prepared. 
+            /// </summary>
             MIDI_ERROR_UNPREPARED                       = 64, // Header not prepared
+            /// <summary>
+            /// Buffers are still in the queue.
+            /// </summary>
             MIDI_ERROR_STILL_PLAYING                    = 65, // Attempt to close device while still playing
             MIDI_ERROR_NO_MAP                           = 66, // No configured instruments
+
+            /// <summary>
+            /// The hardware is busy with other data. 
+            /// </summary>
             MIDI_ERROR_NOT_READY                        = 67, // Hardware is busy
+            /// <summary>
+            /// No MIDI port was found, only occurs when the mapper is opened.
+            /// </summary>
             MIDI_ERROR_NO_DEVICE                        = 68, // Port no longer connected
             MIDI_ERROR_INVALID_SETUP                    = 69, // Invalid memory initialization file
+            /// <summary>
+            /// The application sent a message without a status byte to a stream handle. 
+            /// </summary>
             MIDI_ERROR_BAD_OPEN_MODE                    = 70, // Operation unsupported open mode
             MIDI_ERROR_DONT_CONTINUE                    = 71, // Thru device stops a message
             MIDI_ERROR_LAST_ERROR                       = 71  // Last error
@@ -536,7 +581,7 @@ namespace MidiXL
         /// <param name="inputMidiDeviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI input or thru device to connect.</param>
         /// <param name="outputMidiDeviceHandle">A <see cref="MidiDeviceHandle"/> referencing the MIDI output or thru device to connect.</param>
         /// <returns>A <see cref="Result"/> value containing the result of the API call.</returns>
-        /// <remarks>For MIDI thru devices, a handle must be obtained by a calling the <see cref="OpenMidiOutputDevice"/> method.</remarks>
+        /// <remarks><i>For MIDI thru devices, a handle must be obtained by a calling the <see cref="OpenMidiOutputDevice"/> method.</i></remarks>
         public static Result ConnectMidiDevices(MidiDeviceHandle inputMidiDeviceHandle, MidiDeviceHandle outputMidiDeviceHandle)
         {
             return midiConnect(inputMidiDeviceHandle, outputMidiDeviceHandle, IntPtr.Zero);

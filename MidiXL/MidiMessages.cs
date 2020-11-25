@@ -93,7 +93,7 @@ namespace MidiXL
         /// <summary>
         /// Gets the raw short message data.
         /// </summary>
-        public virtual int Message
+        public virtual int Data
         {
             get { return (this.Status | (this.DataA << 8) | (this.DataB << 16)); }
         }
@@ -144,8 +144,8 @@ namespace MidiXL
                 this.Data[i] = Marshal.ReadByte(_MidiHeader.Data, i);
             }
 
-            // Extract the status byte
-            this.Status = this.Data[0];
+            // Extract the ID byte
+            this.ID = this.Data[1];
 
             // Extract message parameter B
             this.TimeStamp = (int)messageParameterB;
@@ -168,7 +168,7 @@ namespace MidiXL
         internal LongMessage(byte[] data)
         {
             this.Data = data;
-            this.Status = data[0];
+            this.ID = data[1];
         }
 
         #endregion
@@ -186,9 +186,10 @@ namespace MidiXL
         internal IntPtr ParameterB { get; private set; }
 
         /// <summary>
-        /// Gets the status byte of the MIDI long message.
+        /// Gets the ID byte of the MIDI long message.
         /// </summary>
-        internal int Status { get; private set; }
+        /// <remarks><i>Contains the manufacturer ID or a <see cref="UniversalSystemExclusiveMessageTypes"/> value.</i></remarks>
+        internal int ID { get; private set; }
 
         /// <summary>
         /// Gets the time the MIDI long message received since the MIDI input device started.
@@ -207,7 +208,7 @@ namespace MidiXL
         /// <summary>
         /// Converts the <see cref="LongMessage.Data"/> to a hexadecimal <see cref="string"/> representation.
         /// </summary>
-        /// <returns>A formatted <see cref="string"/> representing the <see cref="LongMessage.Data"/> in hexadecimal format.</returns>
+        /// <returns>A formatted <see cref="string"/> representing the <see cref="LongMessage.Data"/> in spaced hexadecimal format.</returns>
         public override string ToString()
         {
             return string.Join(" ", this.Data.Select(x => string.Format("{0:X2}", x)));
