@@ -1,157 +1,159 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace MidiXL
 {
     /// <summary>
-    /// 
+    /// Wraps the Windows multimedia API for use in managed code.
     /// </summary>
     public static class API
     {
         #region Windows Multimedia API
 
         #region DLL Imports
+        
+        /// <summary>
+        /// Name of the Windows multimedia API dynamic link library .
+        /// </summary>
+        private const string DLL = "winmm.dll";
 
         /// <summary>
         /// See <see cref="MidiOutputDeviceCount"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern int midiOutGetNumDevs();
 
         /// <summary>
         /// See <see cref="GetMidiOutputDeviceCapabilities"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutGetDevCaps(IntPtr deviceID, ref MidiOutputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
 
         /// <summary>
         /// See <see cref="OpenMidiOutputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutOpen(ref MidiDeviceHandle deviceHandle, int deviceID, MidiOutputDelegate callback, IntPtr callbackInstance, MidiOpenFlags flags);
 
         /// <summary>
         /// See <see cref="CloseMidiOutputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutClose(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="ResetMidiOutputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="SendShortMessage"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutShortMsg(MidiDeviceHandle deviceHandle, int message);
 
         /// <summary>
         /// See <see cref="SendLongMessage"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutLongMsg(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="PrepareMidiOutputHeader"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutPrepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="UnprepareMidiOutputHeader"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutUnprepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="GetMidiOutputDeviceErrorText"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiOutGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
 
         /// <summary>
         /// See <see cref="MidiInputDeviceCount"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern int midiInGetNumDevs();
 
         /// <summary>
         /// See <see cref="GetMidiInputDeviceCapabilities"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInGetDevCaps(IntPtr deviceID, ref MidiInputDeviceCapabilities deviceCapabilities, int deviceCapabilitiesSize);
 
         /// <summary>
         /// See <see cref="OpenMidiInputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInOpen(ref MidiDeviceHandle deviceHandle, int deviceID, MidiInputDelegate callback, IntPtr callbackInstance, MidiOpenFlags flags);
 
         /// <summary>
         /// See <see cref="CloseMidiInputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInClose(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="ResetMidiInputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInReset(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="StartMidiInputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInStart(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="StopMidiInputDevice"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInStop(MidiDeviceHandle deviceHandle);
 
         /// <summary>
         /// See <see cref="AddMidiInputBuffer"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInAddBuffer(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="PrepareMidiInputHeader"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInPrepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="UnprepareMidiInputHeader"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInUnprepareHeader(MidiDeviceHandle deviceHandle, IntPtr midiHeader, int midiHeaderSize);
 
         /// <summary>
         /// See <see cref="GetMidiInputDeviceErrorText"/> for information.
         /// </summary>
-        [DllImport("winmm.dll", SetLastError = true)]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiInGetErrorText(Result result, StringBuilder stringBuilder, int stringBuilderCapacity);
 
         /// <summary>
         /// See <see cref="ConnectMidiDevices"/> for information.
         /// </summary>
-        [DllImport("winmm.dll")]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiConnect(MidiDeviceHandle handleA, MidiDeviceHandle handleB, IntPtr reserved);
 
         /// <summary>
         /// See <see cref="DisconnectMidiDevices"/> for information.
         /// </summary>
-        [DllImport("winmm.dll")]
+        [DllImport(DLL, SetLastError = true)]
         private static extern Result midiDisconnect(MidiDeviceHandle handleA, MidiDeviceHandle handleB, IntPtr reserved);
 
         #endregion
@@ -202,84 +204,152 @@ namespace MidiXL
         public enum Result : int
         {
             // Multimedia system general return codes
+
             /// <summary>
             /// The operation was succesul.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_NO_ERROR            = 0,  // Operation was succesful
+            MULTIMEDIA_SYSTEM_ERROR_NO_ERROR            = 0,
 
             /// <summary>
             /// An unspecified error occured.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_ERROR               = 1,  // Unspecified error
+            MULTIMEDIA_SYSTEM_ERROR_ERROR               = 1,
 
             /// <summary>
             /// The specified device ID is out of range.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID       = 2,  // An out of range device ID was specified
-            MULTIMEDIA_SYSTEM_ERROR_NOT_ENABLED         = 3,  // Driver not enabled
+            MULTIMEDIA_SYSTEM_ERROR_BAD_DEVICE_ID       = 2,
+
+            /// <summary>
+            /// The device driver is not enabled.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_NOT_ENABLED         = 3,
 
             /// <summary>
             /// The device is alread opened.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_ALLOCATED           = 4,  // The device is already open and is not available
+            MULTIMEDIA_SYSTEM_ERROR_ALLOCATED           = 4,
 
             /// <summary>
             /// The specified device handle is invalid.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE      = 5,  // An invalid device handle was specified, or the device is closed and the handle is no longer valid.
-            MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER           = 6,  // No device driver is present for this device
+            MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE      = 5,
+
+            /// <summary>
+            /// No device driver present for the device.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER           = 6,
 
             /// <summary>
             /// The system is unable to allocate or lock memory.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_NO_MEM              = 7,  // Driver memory allocation error
-            MULTIMEDIA_SYSTEM_ERROR_NOT_SUPPORTED       = 8,  // Unsupported function
-            MULTIMEDIA_SYSTEM_ERROR_BAD_ERROR_NUMBER    = 9,  // Error value out of range
+            MULTIMEDIA_SYSTEM_ERROR_NO_MEM              = 7,  
+
+            /// <summary>
+            /// Unsupported function.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_NOT_SUPPORTED       = 8,  
+
+            /// <summary>
+            /// The error value is out of range.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_BAD_ERROR_NUMBER    = 9,  
+
             /// <summary>
             /// The flags specified are invalid.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_INVALID_FLAG        = 10, // Invalid flag passed
+            MULTIMEDIA_SYSTEM_ERROR_INVALID_FLAG        = 10, 
             /// <summary>
             /// The specified pointer or structure is invalid.
             /// </summary>
-            MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER   = 11, // Invalid parameter passed
-            MULTIMEDIA_SYSTEM_ERROR_HANDLE_BUSY         = 12, // Handle being used simultaneously on another thread
-            MULTIMEDIA_SYSTEM_ERROR_INVALID_ALIAS       = 13, // Specified alias not found
-            MULTIMEDIA_SYSTEM_ERROR_BAD_DB              = 14, // Bad registry database
-            MULTIMEDIA_SYSTEM_ERROR_KEY_NOT_FOUND       = 15, // Registry key not found
-            MULTIMEDIA_SYSTEM_ERROR_READ_ERROR          = 16, // Registry read error
-            MULTIMEDIA_SYSTEM_ERROR_WRITE_ERROR         = 17, // Registry write error
-            MULTIMEDIA_SYSTEM_ERROR_DELETE_ERROR        = 18, // Registry delete error
-            MULTIMEDIA_SYSTEM_ERROR_VALUE_NOT_FOUND     = 19, // Registry value not found
+            MULTIMEDIA_SYSTEM_ERROR_INVALID_PARAMETER   = 11,
+
+            /// <summary>
+            /// Handle being used simultaneously on another thread.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_HANDLE_BUSY         = 12,
+
+            /// <summary>
+            /// Specified alias not found.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_INVALID_ALIAS       = 13,
+
+            /// <summary>
+            /// Bad registry database.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_BAD_DB              = 14,
+
+            /// <summary>
+            /// Registry key not found.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_KEY_NOT_FOUND       = 15,
+
+            /// <summary>
+            /// Registry read error.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_READ_ERROR          = 16,
+
+            /// <summary>
+            /// Registry write error.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_WRITE_ERROR         = 17,
+
+            /// <summary>
+            /// Registry delete error.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_DELETE_ERROR        = 18,
+
+            /// <summary>
+            /// Registry value not found.
+            /// </summary>
+            MULTIMEDIA_SYSTEM_ERROR_VALUE_NOT_FOUND     = 19,
+
+            /// <summary>
+            /// Driver does not call driver callback.
+            /// </summary>
             MULTIMEDIA_SYSTEM_ERROR_NO_DRIVER_CB        = 20, // Driver does not call driver callback
-            MULTIMEDIA_SYSTEM_ERROR_LAST_ERROR          = 20, // Last error
             
             // Multimedia system MIDI specific return codes
+
             /// <summary>
             /// The buffer pointed to by the MIDI header has not been prepared. 
             /// </summary>
-            MIDI_ERROR_UNPREPARED                       = 64, // Header not prepared
+            MIDI_ERROR_UNPREPARED                       = 64, 
+
             /// <summary>
             /// Buffers are still in the queue.
             /// </summary>
-            MIDI_ERROR_STILL_PLAYING                    = 65, // Attempt to close device while still playing
-            MIDI_ERROR_NO_MAP                           = 66, // No configured instruments
+            MIDI_ERROR_STILL_PLAYING                    = 65, 
+
+            /// <summary>
+            /// No configured instruments.
+            /// </summary>
+            MIDI_ERROR_NO_MAP                           = 66,
 
             /// <summary>
             /// The hardware is busy with other data. 
             /// </summary>
-            MIDI_ERROR_NOT_READY                        = 67, // Hardware is busy
+            MIDI_ERROR_NOT_READY                        = 67, 
+
             /// <summary>
             /// No MIDI port was found, only occurs when the mapper is opened.
             /// </summary>
-            MIDI_ERROR_NO_DEVICE                        = 68, // Port no longer connected
-            MIDI_ERROR_INVALID_SETUP                    = 69, // Invalid memory initialization file
+            MIDI_ERROR_NO_DEVICE                        = 68,
+
+            /// <summary>
+            /// Invalid memory initialization file.
+            /// </summary>
+            MIDI_ERROR_INVALID_SETUP                    = 69,
+
             /// <summary>
             /// The application sent a message without a status byte to a stream handle. 
             /// </summary>
-            MIDI_ERROR_BAD_OPEN_MODE                    = 70, // Operation unsupported open mode
-            MIDI_ERROR_DONT_CONTINUE                    = 71, // Thru device stops a message
-            MIDI_ERROR_LAST_ERROR                       = 71  // Last error
+            MIDI_ERROR_BAD_OPEN_MODE                    = 70, 
+
+            /// <summary>
+            /// MIDI thru device stops a message.
+            /// </summary>
+            MIDI_ERROR_DONT_CONTINUE                    = 71, 
         }
 
         /// <summary>
@@ -425,7 +495,7 @@ namespace MidiXL
 
         #endregion
 
-        #region 
+        #region Managed Windows Multimedia API
 
         /// <summary>
         /// Counts the number of available MIDI output devices in the system.
