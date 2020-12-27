@@ -16,11 +16,6 @@ namespace MidiXL
         internal protected API.MidiDeviceHandle _Handle;
 
         /// <summary>
-        /// Tracks whether <see cref="Dispose"/> has been called.
-        /// </summary>
-        internal protected bool _IsDisposed = false;
-
-        /// <summary>
         /// Stores connected MIDI devices.
         /// </summary>
         internal protected List<API.MidiDeviceHandle> _Connections = new List<API.MidiDeviceHandle>();
@@ -53,15 +48,6 @@ namespace MidiXL
             this.Name = capabilities.DeviceName;
             this.Type = API.MidiDeviceType.MIDI_DEVICETYPE_MIDI_PORT;
             this.Handle = IntPtr.Zero;
-        }
-
-        /// <summary>
-        /// Finalizes the the <see cref="MidiDevice"/>.
-        /// </summary>
-        ~MidiDevice()
-        {
-            // Call the Dispose(bool) method signaling it is called by the runtime
-            Dispose(false);
         }
 
         #endregion
@@ -102,6 +88,11 @@ namespace MidiXL
         /// </summary>
         protected bool IsConnected { get; set; } = false;
 
+        /// <summary>
+        /// Gets wheter the MIDI device <see cref="Dispose"/> method has already been called.
+        /// </summary>
+        public bool IsDisposed { get; private set; } = false;
+
         #endregion
 
         #region IDisposable
@@ -111,10 +102,7 @@ namespace MidiXL
         /// </summary>
         public void Dispose()
         {
-            // Call the Dispose(bool) method signaling it is called from code
             Dispose(true);
-
-            // Takes the MIDI device off the finalization queue to prevent executing finalization code twice
             GC.SuppressFinalize(this);
         }
 
@@ -123,7 +111,18 @@ namespace MidiXL
         /// </summary>
         /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
         /// <remarks><i>If called from code managed and unmagaged resources have to be disposed else the runtime handles the managed resources and only unmanaged resource have to be disposed.</i></remarks>
-        protected abstract void Dispose(bool isDisposing);
+        protected virtual void Dispose(bool isDisposing)
+        {
+            if (this.IsDisposed)
+                return;
+
+            if(isDisposing)
+            {
+
+            }
+
+            this.IsDisposed = true;
+        }
 
         #endregion
     }

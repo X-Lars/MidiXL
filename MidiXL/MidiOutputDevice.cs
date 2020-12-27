@@ -45,6 +45,11 @@ namespace MidiXL
             _Callback = Callback;
         }
 
+        ~MidiOutputDevice()
+        {
+            Dispose(false);
+        }
+
         #endregion
 
         #region Properties
@@ -77,8 +82,10 @@ namespace MidiXL
         /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MIDI_ERROR_STILL_PLAYING"/>.</exception>
         public void Close()
         {
-            if(IsOpen)
+            if (IsOpen)
+            {
                 InvalidateResult(API.CloseMidiOutputDevice(_Handle));
+            }
         }
 
         /// <summary>
@@ -87,8 +94,10 @@ namespace MidiXL
         /// <exception cref="MidiOutputDeviceException">Raises <see cref="API.Result.MULTIMEDIA_SYSTEM_ERROR_INVALID_HANDLE"/>.</exception>
         public void Reset()
         {
-            if(IsOpen)
+            if (IsOpen)
+            {
                 InvalidateResult(API.ResetMidiOutputDevice(_Handle));
+            }
         }
 
         /// <summary>
@@ -123,6 +132,9 @@ namespace MidiXL
         /// </summary>
         private void Disconnect()
         {
+            if (_Connections == null)
+                return;
+
             foreach (API.MidiDeviceHandle connection in _Connections)
             {
                 InvalidateResult(API.DisconnectMidiDevices(connection, _Handle));
@@ -200,7 +212,7 @@ namespace MidiXL
                 midiHeaderPointer = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(API.MidiHeader)));
 
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Marshal.FreeHGlobal(midiHeader.Data);
                 throw;
@@ -210,7 +222,7 @@ namespace MidiXL
             {
                 Marshal.StructureToPtr(midiHeader, midiHeaderPointer, false);
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Marshal.FreeHGlobal(midiHeader.Data);
                 Marshal.FreeHGlobal(midiHeaderPointer);
@@ -243,25 +255,27 @@ namespace MidiXL
         /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
         protected override void Dispose(bool isDisposing)
         {
-            if(!_IsDisposed)
+            if(isDisposing)
             {
-                if(isDisposing)
-                {
-                    if(Handle != IntPtr.Zero)
-                    {
-                        Reset();
-                        Close();
-                        Disconnect();
-
-                        _Connections = null;
-                        _Callback = null;
-
-                        Handle = IntPtr.Zero;
-                    }
-                }
-
-                _IsDisposed = true;
+                
             }
+
+            base.Dispose(isDisposing);
+        }
+
+        public override void Dispose()
+        {
+            if (IsDisposed)
+                return;
+
+            Reset();
+            Close();
+            Disconnect();
+
+            _Connections = null;
+            _Callback = null;
+
+            Handle = IntPtr.Zero;
         }
 
         #endregion

@@ -466,25 +466,25 @@ namespace MidiXL
         /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
         protected override void Dispose(bool isDisposing)
         {
-            if (!_IsDisposed)
+            base.Dispose(isDisposing);
+        }
+
+        public override void Dispose()
+        {
+            if (IsDisposed)
+                return;
+
+            lock(_Lock)
             {
-                if (isDisposing)
-                {
-                    if (Handle != IntPtr.Zero)
-                    {
-                        Reset();
-                        Stop();
-                        Close();
-                        Disconnect();
+                Reset();
+                Stop();
+                Close();
+                Disconnect();
 
-                        _Connections = null;
-                        _Callback = null;
+                _Connections = null;
+                _Callback = null;
 
-                        Handle = IntPtr.Zero;
-                    }
-                }
-
-                _IsDisposed = true;
+                Handle = IntPtr.Zero;
             }
         }
 
