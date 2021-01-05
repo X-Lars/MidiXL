@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace MidiXL
 {
     /// <summary>
     /// Common base class for MIDI input and output devices.
     /// </summary>
-    public abstract class MidiDevice : IDisposable
+    public abstract class MidiDevice
     {
         #region Fields
 
@@ -87,42 +88,6 @@ namespace MidiXL
         /// Gets wheter the MIDI device is connected to another MIDI device.
         /// </summary>
         protected bool IsConnected { get; set; } = false;
-
-        /// <summary>
-        /// Gets wheter the MIDI device <see cref="Dispose"/> method has already been called.
-        /// </summary>
-        public bool IsDisposed { get; private set; } = false;
-
-        #endregion
-
-        #region IDisposable
-
-        /// <summary>
-        /// Disposes the MIDI device.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Disposes the MIDI device.
-        /// </summary>
-        /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
-        /// <remarks><i>If called from code managed and unmagaged resources have to be disposed else the runtime handles the managed resources and only unmanaged resource have to be disposed.</i></remarks>
-        protected virtual void Dispose(bool isDisposing)
-        {
-            if (this.IsDisposed)
-                return;
-
-            if(isDisposing)
-            {
-
-            }
-
-            this.IsDisposed = true;
-        }
 
         #endregion
     }

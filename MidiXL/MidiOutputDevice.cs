@@ -45,11 +45,6 @@ namespace MidiXL
             _Callback = Callback;
         }
 
-        ~MidiOutputDevice()
-        {
-            Dispose(false);
-        }
-
         #endregion
 
         #region Properties
@@ -247,35 +242,6 @@ namespace MidiXL
             {
                 throw new MidiOutputDeviceException(result);
             }
-        }
-
-        /// <summary>
-        /// Disposes the MIDI output device.
-        /// </summary>
-        /// <param name="isDisposing">A <see cref="bool"/> specifying the method is called from code (true) or by the runtime (false).</param>
-        protected override void Dispose(bool isDisposing)
-        {
-            if(isDisposing)
-            {
-                
-            }
-
-            base.Dispose(isDisposing);
-        }
-
-        public override void Dispose()
-        {
-            if (IsDisposed)
-                return;
-
-            Reset();
-            Close();
-            Disconnect();
-
-            _Connections = null;
-            _Callback = null;
-
-            Handle = IntPtr.Zero;
         }
 
         #endregion
