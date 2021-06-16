@@ -11,7 +11,7 @@ namespace MidiXL
     /// <summary>
     /// 
     /// </summary>
-    public sealed class MidiOutputDevice : MidiDevice
+    public sealed class MidiOutputDevice : MidiDevice, IDisposable
     {
         #region Fields
 
@@ -30,6 +30,10 @@ namespace MidiXL
         /// </summary>
         private static readonly object _Lock = new object();
 
+        private bool _IsDisposed;
+
+
+        public event EventHandler<EventArgs> Ready;
         #endregion
 
         #region Constructor
@@ -155,8 +159,9 @@ namespace MidiXL
                 this.IsOpen = false;
             }
             else 
-            { 
+            {
                 // API.MidiOutputMessage.MIDI_OUTPUT_MESSAGE_DONE
+                Ready?.Invoke(this, new EventArgs());
             }
             
         }
@@ -242,6 +247,37 @@ namespace MidiXL
             {
                 throw new MidiOutputDeviceException(result);
             }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!_IsDisposed)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                API.CloseMidiOutputDevice(_Handle);
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _IsDisposed = true;
+            }
+        }
+
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        ~MidiOutputDevice()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            GC.KeepAlive(_Callback);
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion

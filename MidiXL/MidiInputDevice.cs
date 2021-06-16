@@ -12,7 +12,7 @@ namespace MidiXL
     /// <summary>
     /// 
     /// </summary>
-    public sealed class MidiInputDevice : MidiDevice
+    public sealed class MidiInputDevice : MidiDevice, IDisposable
     {
         #region Fields
 
@@ -30,6 +30,7 @@ namespace MidiXL
         /// Buffer for receiving long MIDI messages.
         /// </summary>
         private List<IntPtr> _Buffer = new List<IntPtr>();
+        private bool _IsDisposed;
 
         /// <summary>
         /// Lock for thread safety.
@@ -105,10 +106,18 @@ namespace MidiXL
             _Callback = Callback;
         }
 
+        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+        ~MidiInputDevice()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(false);
+        }
+
+
         #endregion
 
         #region Properties
-        
+
         /// <summary>
         /// Gets whether the MIDI input device is started.
         /// </summary>
@@ -265,7 +274,7 @@ namespace MidiXL
                     break;
 
                 case API.MidiInputMessage.MIDI_INPUT_MESSAGE_MORE_DATA:
-
+                    Console.WriteLine("MIDI IN MORE DATA");
                     // A = Packed MIDI message, B = Time in milliseconds since Start
                     break;
 
@@ -458,6 +467,45 @@ namespace MidiXL
             {
                 throw new MidiInputDeviceException(result);
             }
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!_IsDisposed)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects)
+                }
+
+                if(_Buffer.Count > 0)
+                {
+                    API.ResetMidiInputDevice(_Handle);
+
+                    foreach(var headerPointer in _Buffer)
+                    {
+                        API.MidiHeader header = (API.MidiHeader)Marshal.PtrToStructure(headerPointer, typeof(API.MidiHeader));
+                        API.UnprepareMidiInputHeader(_Handle, headerPointer, Marshal.SizeOf(typeof(API.MidiHeader)));
+                        Marshal.FreeHGlobal(header.Data);
+                        Marshal.FreeHGlobal(headerPointer);
+                    }
+                }
+
+                API.CloseMidiInputDevice(_Handle);
+
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                _IsDisposed = true;
+            }
+        }
+
+       
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            GC.KeepAlive(_Callback);
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion
